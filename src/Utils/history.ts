@@ -67,10 +67,13 @@ export const processHistoryMessage = (item: proto.IHistorySync, logger?: ILogger
 			for (const chat of item.conversations! as Chat[]) {
 				contacts.push({
 					id: chat.id!,
+					idOriginal: chat.id!,
 					name: chat.displayName || chat.name || chat.username || undefined,
 					username: chat.username || undefined,
 					lid: chat.lidJid || chat.accountLid || undefined,
-					phoneNumber: chat.pnJid || undefined
+					lidOriginal: chat.lidJid || chat.accountLid || undefined,
+					phoneNumber: chat.pnJid || undefined,
+					phoneNumberOriginal: chat.pnJid || undefined
 				})
 
 				const chatId = chat.id!
@@ -93,6 +96,8 @@ export const processHistoryMessage = (item: proto.IHistorySync, logger?: ILogger
 
 				for (const item of msgs) {
 					const message = item.message! as WAMessage
+					message.key.remoteJidOriginal = message.key.remoteJid ?? undefined
+					message.key.participantOriginal = message.key.participant ?? undefined
 					messages.push(message)
 
 					if (!chat.messages?.length) {

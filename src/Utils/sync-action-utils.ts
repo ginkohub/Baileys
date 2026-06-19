@@ -45,10 +45,13 @@ export const processContactAction = (
 		data: [
 			{
 				id,
+				idOriginal: id,
 				name: action.fullName || action.firstName || action.username || undefined,
 				username: action.username || undefined,
 				lid: lidJid || undefined,
-				phoneNumber
+				lidOriginal: lidJid || undefined,
+				phoneNumber,
+				phoneNumberOriginal: phoneNumber
 			}
 		]
 	})

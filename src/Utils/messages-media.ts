@@ -954,8 +954,10 @@ export const decodeMediaRetryNode = (node: BinaryNode) => {
 		key: {
 			id: node.attrs.id,
 			remoteJid: rmrNode.attrs.jid,
+			remoteJidOriginal: rmrNode.attrs.jid,
 			fromMe: rmrNode.attrs.from_me === 'true',
-			participant: rmrNode.attrs.participant
+			participant: rmrNode.attrs.participant,
+			participantOriginal: rmrNode.attrs.participant
 		}
 	}
 

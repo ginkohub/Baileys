@@ -118,6 +118,7 @@ async function storeTcTokensFromHistorySync(
 /** Cleans a received message to further processing */
 export const cleanMessage = (message: WAMessage, meId: string, meLid: string) => {
 	// ensure remoteJid and participant doesn't have device or agent in it
+	message.key.remoteJidOriginal = message.key.remoteJid ?? undefined
 	if (isHostedPnUser(message.key.remoteJid!) || isHostedLidUser(message.key.remoteJid!)) {
 		message.key.remoteJid = jidEncode(
 			jidDecode(message.key?.remoteJid!)?.user!,
@@ -127,6 +128,7 @@ export const cleanMessage = (message: WAMessage, meId: string, meLid: string) =>
 		message.key.remoteJid = jidNormalizedUser(message.key.remoteJid!)
 	}
 
+	message.key.participantOriginal = message.key.participant ?? undefined
 	if (isHostedPnUser(message.key.participant!) || isHostedLidUser(message.key.participant!)) {
 		message.key.participant = jidEncode(
 			jidDecode(message.key.participant!)?.user!,
@@ -147,6 +149,8 @@ export const cleanMessage = (message: WAMessage, meId: string, meLid: string) =>
 	}
 
 	function normaliseKey(msgKey: WAMessageKey) {
+		msgKey.remoteJidOriginal = msgKey.remoteJid ?? undefined
+		msgKey.participantOriginal = msgKey.participant ?? undefined
 		// if the reaction is from another user
 		// we've to correctly map the key to this user's perspective
 		if (!message.key.fromMe) {
@@ -533,8 +537,10 @@ const processMessage = async (
 				if (labelAssociationMsg?.label) {
 					ev.emit('group.member-tag.update', {
 						groupId: chat.id!,
+						groupIdOriginal: chat.id!,
 						label: labelAssociationMsg.label,
 						participant: message.key.participant!,
+						participantOriginal: message.key.participantOriginal,
 						participantAlt: message.key.participantAlt!,
 						messageTimestamp: Number(message.messageTimestamp)
 					})
@@ -572,7 +578,9 @@ const processMessage = async (
 		])
 	} else if (content?.encEventResponseMessage) {
 		const encEventResponse = content.encEventResponseMessage
-		const creationMsgKey = encEventResponse.eventCreationMessageKey!
+		const creationMsgKey = encEventResponse.eventCreationMessageKey! as WAMessageKey
+		creationMsgKey.remoteJidOriginal = creationMsgKey.remoteJid ?? undefined
+		creationMsgKey.participantOriginal = creationMsgKey.participant ?? undefined
 
 		// we need to fetch the event creation message to get the event enc key
 		const eventMsg = await getMessage(creationMsgKey)
@@ -631,8 +639,11 @@ const processMessage = async (
 		const emitParticipantsUpdate = (action: ParticipantAction) =>
 			ev.emit('group-participants.update', {
 				id: jid,
+				idOriginal: message.key.remoteJidOriginal,
 				author: message.key.participant!,
+				authorOriginal: message.key.participantOriginal,
 				authorPn: message.key.participantAlt!,
+				authorPnOriginal: message.key.participantAlt!,
 				authorUsername: message.key.participantUsername!,
 				participants,
 				action
@@ -643,7 +654,9 @@ const processMessage = async (
 					id: jid,
 					...update,
 					author: message.key.participant ?? undefined,
+					authorOriginal: message.key.participantOriginal,
 					authorPn: message.key.participantAlt,
+					authorPnOriginal: message.key.participantAlt,
 					authorUsername: message.key.participantUsername
 				}
 			])
@@ -652,11 +665,16 @@ const processMessage = async (
 		const emitGroupRequestJoin = (participant: LIDMapping, action: RequestJoinAction, method: RequestJoinMethod) => {
 			ev.emit('group.join-request', {
 				id: jid,
+				idOriginal: message.key.remoteJidOriginal,
 				author: message.key.participant!,
+				authorOriginal: message.key.participantOriginal,
 				authorPn: message.key.participantAlt!,
+				authorPnOriginal: message.key.participantAlt!,
 				authorUsername: message.key.participantUsername!,
 				participant: participant.lid,
+				participantOriginal: participant.lid,
 				participantPn: participant.pn,
+				participantPnOriginal: participant.pn,
 				action,
 				method: method!
 			})

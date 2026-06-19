@@ -145,19 +145,19 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const msgRetryCache =
 		config.msgRetryCounterCache ||
-		new NodeCache<number>({
+		new NodeCache({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false
 		})
 	const callOfferCache =
 		config.callOfferCache ||
-		new NodeCache<WACallEvent>({
+		new NodeCache({
 			stdTTL: DEFAULT_CACHE_TTLS.CALL_OFFER, // 5 mins
 			useClones: false
 		})
 
 	// Debounce identity-change session refreshes per JID to avoid bursts
-	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false })
+	const identityAssertDebounce = new NodeCache({ stdTTL: 5, useClones: false })
 
 	let sendActiveReceipts = false
 
@@ -827,7 +827,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					{
 						...metadata,
 						author: actingParticipantLid,
+						authorOriginal: actingParticipantLid,
 						authorPn: actingParticipantPn,
+						authorPnOriginal: actingParticipantPn,
 						authorUsername: actingParticipantUsername
 					}
 				])
@@ -858,8 +860,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					// TODO: Store LID MAPPINGS
 					return {
 						id: attrs.jid!,
+						idOriginal: attrs.jid!,
 						phoneNumber: isLidUser(attrs.jid) && isPnUser(attrs.phone_number) ? attrs.phone_number : undefined,
+						phoneNumberOriginal: isLidUser(attrs.jid) && isPnUser(attrs.phone_number) ? attrs.phone_number : undefined,
 						lid: isPnUser(attrs.jid) && isLidUser(attrs.lid) ? attrs.lid : undefined,
+						lidOriginal: isPnUser(attrs.jid) && isLidUser(attrs.lid) ? attrs.lid : undefined,
 						username: attrs.participant_username || attrs.username || undefined,
 						admin: (attrs.type || null) as GroupParticipant['admin']
 					}
@@ -1284,10 +1289,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	async function decipherLinkPublicKey(data: Uint8Array | Buffer) {
 		const buffer = toRequiredBuffer(data)
-		const salt = buffer.slice(0, 32)
+		const salt = buffer.subarray(0, 32)
 		const secretKey = await derivePairingCodeKey(authState.creds.pairingCode!, salt)
-		const iv = buffer.slice(32, 48)
-		const payload = buffer.slice(48, 80)
+		const iv = buffer.subarray(32, 48)
+		const payload = buffer.subarray(48, 80)
 		return aesDecryptCTR(payload, secretKey, iv)
 	}
 
@@ -1470,11 +1475,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const remoteJid = !isNodeFromMe || isJidGroup(attrs.from) ? attrs.from : attrs.recipient
 		const fromMe = !attrs.recipient || ((attrs.type === 'retry' || attrs.type === 'sender') && isNodeFromMe)
 
-		const key: proto.IMessageKey = {
+		const key: WAMessageKey = {
 			remoteJid,
+			remoteJidOriginal: remoteJid,
 			id: '',
 			fromMe,
-			participant: attrs.participant
+			participant: attrs.participant,
+			participantOriginal: attrs.participant
 		}
 
 		const ids = [attrs.id!]
@@ -1846,7 +1853,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleBadAck = async ({ attrs }: BinaryNode) => {
-		const key: WAMessageKey = { remoteJid: attrs.from, fromMe: true, id: attrs.id }
+		const key: WAMessageKey = { remoteJid: attrs.from, remoteJidOriginal: attrs.from, fromMe: true, id: attrs.id }
 
 		// WARNING: REFRAIN FROM ENABLING THIS FOR NOW. IT WILL CAUSE A LOOP
 		// // current hypothesis is that if pash is sent in the ack
@@ -1943,7 +1950,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await execTask()
 		ev.flush()
 
-		function execTask() {
+		async function execTask() {
 			return exec(node, false).catch(err => onUnexpectedError(err, identifier))
 		}
 	}
@@ -2064,7 +2071,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			tcTokenIndexTimer = undefined
 			// Best-effort flush — may fail if store is already closed
 			try {
-				void Promise.resolve(flushTcTokenIndex()).catch(() => {})
+				void Promise.resolve(flushTcTokenIndex()).catch(() => { })
 			} catch {
 				/* ignore sync errors */
 			}

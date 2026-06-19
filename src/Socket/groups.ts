@@ -326,10 +326,14 @@ export const extractGroupMetadata = (result: BinaryNode) => {
 	let descOwnerPn: string | undefined
 	let descOwnerUsername: string | undefined
 	let descTime: number | undefined
+	let descOwnerOrig: string | undefined
+	let descOwnerPnOrig: string | undefined
 	if (descChild) {
 		desc = getBinaryNodeChildString(descChild, 'body')
-		descOwner = descChild.attrs.participant ? jidNormalizedUser(descChild.attrs.participant) : undefined
-		descOwnerPn = descChild.attrs.participant_pn ? jidNormalizedUser(descChild.attrs.participant_pn) : undefined
+		descOwnerOrig = descChild.attrs.participant
+		descOwner = descOwnerOrig ? jidNormalizedUser(descOwnerOrig) : undefined
+		descOwnerPnOrig = descChild.attrs.participant_pn
+		descOwnerPn = descOwnerPnOrig ? jidNormalizedUser(descOwnerPnOrig) : undefined
 		descOwnerUsername = descChild.attrs.participant_username || undefined
 		descTime = +descChild.attrs.t!
 		descId = descChild.attrs.id
@@ -338,28 +342,37 @@ export const extractGroupMetadata = (result: BinaryNode) => {
 	const groupId = group.attrs.id.includes('@') ? group.attrs.id : jidEncode(group.attrs.id, 'g.us')
 	const eph = getBinaryNodeChild(group, 'ephemeral')?.attrs.expiration
 	const memberAddMode = getBinaryNodeChildString(group, 'member_add_mode') === 'all_member_add'
+	const linkedParent = getBinaryNodeChild(group, 'linked_parent')?.attrs.jid || undefined
 	const metadata: GroupMetadata = {
 		id: groupId,
+		idOriginal: groupId,
 		notify: group.attrs.notify,
 		addressingMode: group.attrs.addressing_mode === 'lid' ? WAMessageAddressingMode.LID : WAMessageAddressingMode.PN,
 		subject: group.attrs.subject!,
 		subjectOwner: group.attrs.s_o,
+		subjectOwnerOriginal: group.attrs.s_o,
 		subjectOwnerPn: group.attrs.s_o_pn,
+		subjectOwnerPnOriginal: group.attrs.s_o_pn,
 		subjectOwnerUsername: group.attrs.s_o_username,
 		subjectTime: +group.attrs.s_t!,
 		size: group.attrs.size ? +group.attrs.size : getBinaryNodeChildren(group, 'participant').length,
 		creation: +group.attrs.creation!,
 		owner: group.attrs.creator ? jidNormalizedUser(group.attrs.creator) : undefined,
+		ownerOriginal: group.attrs.creator || undefined,
 		ownerPn: group.attrs.creator_pn ? jidNormalizedUser(group.attrs.creator_pn) : undefined,
+		ownerPnOriginal: group.attrs.creator_pn || undefined,
 		ownerUsername: group.attrs.creator_username || undefined,
 		owner_country_code: group.attrs.creator_country_code,
 		desc,
 		descId,
 		descOwner,
+		descOwnerOriginal: descOwnerOrig,
 		descOwnerPn,
+		descOwnerPnOriginal: descOwnerPnOrig,
 		descOwnerUsername,
 		descTime,
-		linkedParent: getBinaryNodeChild(group, 'linked_parent')?.attrs.jid || undefined,
+		linkedParent,
+		linkedParentOriginal: linkedParent,
 		restrict: !!getBinaryNodeChild(group, 'locked'),
 		announce: !!getBinaryNodeChild(group, 'announcement'),
 		isCommunity: !!getBinaryNodeChild(group, 'parent'),
@@ -370,8 +383,11 @@ export const extractGroupMetadata = (result: BinaryNode) => {
 			// TODO: Store LID MAPPINGS
 			return {
 				id: attrs.jid!,
+				idOriginal: attrs.jid!,
 				phoneNumber: isLidUser(attrs.jid) && isPnUser(attrs.phone_number) ? attrs.phone_number : undefined,
+				phoneNumberOriginal: isLidUser(attrs.jid) && isPnUser(attrs.phone_number) ? attrs.phone_number : undefined,
 				lid: isPnUser(attrs.jid) && isLidUser(attrs.lid) ? attrs.lid : undefined,
+				lidOriginal: isPnUser(attrs.jid) && isLidUser(attrs.lid) ? attrs.lid : undefined,
 				username: attrs.participant_username || attrs.username || undefined,
 				admin: (attrs.type || null) as GroupParticipant['admin']
 			}

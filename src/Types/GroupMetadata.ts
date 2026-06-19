@@ -15,29 +15,37 @@ export type RequestJoinMethod = 'invite_link' | 'linked_group_join' | 'non_admin
 
 export interface GroupMetadata {
 	id: string
+	idOriginal?: string
 	notify?: string
 	/** group uses 'lid' or 'pn' to send messages */
 	addressingMode?: WAMessageAddressingMode
 	owner: string | undefined
+	ownerOriginal?: string
 	ownerPn?: string | undefined
+	ownerPnOriginal?: string
 	ownerUsername?: string | undefined
 	owner_country_code?: string | undefined
 	subject: string
 	/** group subject owner */
 	subjectOwner?: string
+	subjectOwnerOriginal?: string
 	subjectOwnerPn?: string
+	subjectOwnerPnOriginal?: string
 	subjectOwnerUsername?: string
 	/** group subject modification date */
 	subjectTime?: number
 	creation?: number
 	desc?: string
 	descOwner?: string
+	descOwnerOriginal?: string
 	descOwnerPn?: string
+	descOwnerPnOriginal?: string
 	descOwnerUsername?: string
 	descId?: string
 	descTime?: number
 	/** if this group is part of a community, it returns the jid of the community to which it belongs */
 	linkedParent?: string
+	linkedParentOriginal?: string
 	/** is set when the group only allows admins to change group settings */
 	restrict?: boolean
 	/** is set when the group only allows admins to write messages */
@@ -58,7 +66,9 @@ export interface GroupMetadata {
 	inviteCode?: string
 	/** the person who added you to group or changed some setting in group */
 	author?: string
+	authorOriginal?: string
 	authorPn?: string
+	authorPnOriginal?: string
 	authorUsername?: string
 }
 

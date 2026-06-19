@@ -576,6 +576,7 @@ export const chatModificationToAppPatch = (mod: ChatModification, jid: string) =
 							}
 
 							if (m.key.participant) {
+								m.key.participantOriginal = m.key.participant
 								m.key.participant = jidNormalizedUser(m.key.participant)
 							}
 
@@ -996,6 +997,7 @@ export const processSyncAction = (
 		ev.emit('contacts.upsert', [
 			{
 				id: id!,
+				idOriginal: id!,
 				name:
 					action.lidContactAction.fullName ||
 					action.lidContactAction.firstName ||
@@ -1003,6 +1005,7 @@ export const processSyncAction = (
 					undefined,
 				username: action.lidContactAction.username || undefined,
 				lid: id!,
+				lidOriginal: id!,
 				phoneNumber: undefined
 			}
 		])
